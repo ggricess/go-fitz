@@ -192,11 +192,11 @@ func (f *Document) NumPage() int {
 
 // Image returns image for given page number.
 func (f *Document) Image(pageNumber int) (image.Image, error) {
-	return f.ImageDPI(pageNumber, 300.0)
+	return f.ImageDPI(pageNumber, 300.0, false)
 }
 
 // ImageDPI returns image for given page number and DPI.
-func (f *Document) ImageDPI(pageNumber int, dpi float64) (image.Image, error) {
+func (f *Document) ImageDPI(pageNumber int, dpi float64, grayscale bool) (image.Image, error) {
 	f.mtx.Lock()
 	defer f.mtx.Unlock()
 
@@ -219,7 +219,12 @@ func (f *Document) ImageDPI(pageNumber int, dpi float64) (image.Image, error) {
 	bounds = C.fz_transform_rect(bounds, ctm)
 	bbox = C.fz_round_rect(bounds)
 
-	pixmap := C.fz_new_pixmap_with_bbox(f.ctx, C.fz_device_rgb(f.ctx), bbox, nil, 1)
+	var pixmap *C.fz_pixmap
+	if !grayscale {
+		pixmap = C.fz_new_pixmap_with_bbox(f.ctx, C.fz_device_rgb(f.ctx), bbox, nil, 1)
+	} else {
+		pixmap = C.fz_new_pixmap_with_bbox(f.ctx, C.fz_device_gray(f.ctx), bbox, nil, 0)
+	}
 	if pixmap == nil {
 		return nil, ErrCreatePixmap
 	}
@@ -250,7 +255,7 @@ func (f *Document) ImageDPI(pageNumber int, dpi float64) (image.Image, error) {
 }
 
 // ImagePNG returns image for given page number as PNG bytes.
-func (f *Document) ImagePNG(pageNumber int, dpi float64) ([]byte, error) {
+func (f *Document) ImagePNG(pageNumber int, dpi float64, grayscale bool) ([]byte, error) {
 	f.mtx.Lock()
 	defer f.mtx.Unlock()
 
@@ -271,7 +276,12 @@ func (f *Document) ImagePNG(pageNumber int, dpi float64) ([]byte, error) {
 	bounds = C.fz_transform_rect(bounds, ctm)
 	bbox = C.fz_round_rect(bounds)
 
-	pixmap := C.fz_new_pixmap_with_bbox(f.ctx, C.fz_device_rgb(f.ctx), bbox, nil, 1)
+	var pixmap *C.fz_pixmap
+	if !grayscale {
+		pixmap = C.fz_new_pixmap_with_bbox(f.ctx, C.fz_device_rgb(f.ctx), bbox, nil, 1)
+	} else {
+		pixmap = C.fz_new_pixmap_with_bbox(f.ctx, C.fz_device_gray(f.ctx), bbox, nil, 0)
+	}
 	if pixmap == nil {
 		return nil, ErrCreatePixmap
 	}
